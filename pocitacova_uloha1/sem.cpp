@@ -298,7 +298,119 @@ void bfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
     cout << "Could not find a way to end, sorry" << endl;
 }
 
+int dfs_godeep(vector<vector<CField>> m_map, vector<size_t>& start_end_points, map<CField, CField> prev, size_t x, size_t y){
+
+    if( x == start_end_points[2] && y == start_end_points[3]){
+        reconstruct_path(m_map, start_end_points, prev);
+        return 1;
+    }
+
+    m_map[y][x].m_opened = true;
+    print_map(m_map, start_end_points);
+
+    for (size_t i = 0; i < 4; i++) {
+        switch (i) {
+            case 0: // UP
+                if (y > 0) {
+                    if (!m_map[y - 1][x].m_door && !m_map[y - 1][x].m_opened) {
+                        prev[m_map[y - 1][x]] = m_map[y][x];
+                        if(dfs_godeep(m_map, start_end_points, prev, x, y - 1))
+                            return 1;
+                    }
+                }
+                break;
+
+            case 1: // DOWN
+                if (y + 1 < m_map.size()) {
+                    if (!m_map[y + 1][x].m_door && !m_map[y + 1][x].m_opened) {
+                        prev[m_map[y + 1][x]] = m_map[y][x];
+                        if(dfs_godeep(m_map, start_end_points, prev, x, y + 1))
+                            return 1;
+                    }
+                }
+                break;
+
+            case 2: // RIGHT
+                if (x + 1 < m_map[0].size()) {
+                    if (!m_map[y][x + 1].m_door && !m_map[y][x + 1].m_opened) {
+                        prev[m_map[y][x + 1]] = m_map[y][x];
+                        if(dfs_godeep(m_map, start_end_points, prev, x + 1, y))
+                            return 1;
+                    }
+                }
+                break;
+
+            case 3: // LEFT
+                if (x > 0) {
+                    if (!m_map[y][x - 1].m_door && !m_map[y][x - 1].m_opened) {
+                        prev[m_map[y][x - 1]] = m_map[y][x];
+                        if(dfs_godeep(m_map, start_end_points, prev, x - 1, y))
+                            return 1;
+                    }
+                }
+                break;
+        }
+    }
+    return 0;
+}
+
 void dfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
+    std::map<CField, CField> prev;
+
+    CField field = m_map[start_end_points[1]][start_end_points[0]];
+    m_map[start_end_points[1]][start_end_points[0]].m_opened = true;
+
+    for (size_t i = 0; i < 4; i++) {
+        switch (i) {
+            case 0: // UP
+                if (field.m_y > 0) {
+                    auto &neighbor = m_map[field.m_y - 1][field.m_x];
+
+                    if (!neighbor.m_door && !neighbor.m_opened) {
+                        prev[neighbor] = field;
+                        if(dfs_godeep(m_map, start_end_points, prev, field.m_x, field.m_y - 1))
+                            return;
+                    }
+                }
+                break;
+
+            case 1: // DOWN
+                if (field.m_y + 1 < m_map.size()) {
+                    auto &neighbor = m_map[field.m_y + 1][field.m_x];
+
+                    if (!neighbor.m_door && !neighbor.m_opened) {
+                        prev[neighbor] = field;
+                        if(dfs_godeep(m_map, start_end_points, prev,field.m_x, field.m_y + 1))
+                            return;
+                    }
+                }
+                break;
+
+            case 2: // RIGHT
+                if (field.m_x + 1 < m_map[0].size()) {
+                    auto &neighbor = m_map[field.m_y][field.m_x + 1];
+
+                    if (!neighbor.m_door && !neighbor.m_opened) {
+                        prev[neighbor] = field;
+                        if(dfs_godeep(m_map, start_end_points, prev,field.m_x + 1, field.m_y))
+                            return;
+                    }
+                }
+                break;
+
+            case 3: // LEFT
+                if (field.m_x > 0) {
+                    auto &neighbor = m_map[field.m_y][field.m_x - 1];
+
+                    if (!neighbor.m_door && !neighbor.m_opened) {
+                        prev[neighbor] = field;
+                        if(dfs_godeep(m_map, start_end_points, prev,field.m_x - 1, field.m_y))
+                            return;
+                    }
+                }
+                break;
+        }
+    }
 
 }
 
