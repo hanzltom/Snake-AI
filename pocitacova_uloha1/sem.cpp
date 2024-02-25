@@ -158,7 +158,7 @@ void random_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
     srand(static_cast<unsigned>(std::time(0)));
 
     while( !vec.empty()){
-        //print_map(m_map, start_end_points);
+        print_map(m_map, start_end_points);
         size_t pos = rand() % vec.size();
         CField field = vec[pos];
         cout << "Nova iterace, vybran prvek" << field.m_x << ' '<< field.m_y << endl;
@@ -226,7 +226,76 @@ void random_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
 }
 
 void bfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
+    std::map<CField, CField> prev;
 
+    queue<CField> q;
+    q.push(m_map[start_end_points[1]][start_end_points[0]]);
+    m_map[start_end_points[1]][start_end_points[0]].m_opened = true;
+
+    while( !q.empty()){
+        print_map(m_map, start_end_points);
+        CField field = q.front();
+        q.pop();
+
+        if( field.m_x == start_end_points[2] && field.m_y == start_end_points[3]){
+            reconstruct_path(m_map, start_end_points, prev);
+            return;
+        }
+
+        for (size_t i = 0; i < 4; i++) {
+            switch (i) {
+                case 0: // UP
+                    if (field.m_y > 0) {
+                        auto &neighbor = m_map[field.m_y - 1][field.m_x];
+
+                        if (!neighbor.m_door && !neighbor.m_opened) {
+                            q.push(neighbor);
+                            neighbor.m_opened = true;
+                            prev[neighbor] = field;
+                        }
+                    }
+                    break;
+
+                case 1: // DOWN
+                    if (field.m_y + 1 < m_map.size()) {
+                        auto &neighbor = m_map[field.m_y + 1][field.m_x];
+
+                        if (!neighbor.m_door && !neighbor.m_opened) {
+                            q.push(neighbor);
+                            neighbor.m_opened = true;
+                            prev[neighbor] = field;
+                        }
+                    }
+                    break;
+
+                case 2: // RIGHT
+                    if (field.m_x + 1 < m_map[0].size()) {
+                        auto &neighbor = m_map[field.m_y][field.m_x + 1];
+
+                        if (!neighbor.m_door && !neighbor.m_opened) {
+                            q.push(neighbor);
+                            neighbor.m_opened = true;
+                            prev[neighbor] = field;
+                        }
+                    }
+                    break;
+
+                case 3: // LEFT
+                    if (field.m_x > 0) {
+                        auto &neighbor = m_map[field.m_y][field.m_x - 1];
+
+                        if (!neighbor.m_door && !neighbor.m_opened) {
+                            q.push(neighbor);
+                            neighbor.m_opened = true;
+                            prev[neighbor] = field;
+                        }
+                    }
+                    break;
+            }
+        }
+
+    }
+    cout << "Could not find a way to end, sorry" << endl;
 }
 
 void dfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
