@@ -14,6 +14,7 @@
 #include <stack>
 #include <queue>
 #include <deque>
+#include <cmath>
 #include <ctime>
 #include <map>
 #include <unordered_map>
@@ -132,10 +133,10 @@ void reconstruct_path(vector<vector<CField>>& m_map, vector<size_t>& start_end_p
     cout << "Rekonstrukce:" << endl;
     auto &field = prev[m_map[start_end_points[3]][start_end_points[2]]];
 
-    cout << "Initial Field: " << field.m_x << ' ' << field.m_y << endl;
+    //cout << "Initial Field: " << field.m_x << ' ' << field.m_y << endl;
 
     while (field.m_x != start_end_points[0] || field.m_y != start_end_points[1]) {
-        cout << "In Loop: " << field.m_x << ' ' << field.m_y << endl;
+        //cout << "In Loop: " << field.m_x << ' ' << field.m_y << endl;
 
         if (field.m_x < m_map[0].size() && field.m_y < m_map.size()) {
             m_map[field.m_y][field.m_x].m_final_path = true;
@@ -414,7 +415,94 @@ void dfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
 
 }
 
+double distance(const CField& start, const CField& end) {
+    double x_diff = static_cast<double>(start.m_x) - static_cast<double>(end.m_x);
+    double y_diff = static_cast<double>(start.m_y) - static_cast<double>(end.m_y);
+    return sqrt(pow(x_diff, 2) + pow(y_diff, 2));
+}
+
 void greedy_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
+
+    auto cmp = [](const pair<CField, double>& lhs, const pair<CField, double>& rhs) {
+        const double epsilon = 1e-12;
+        return lhs.second + epsilon > rhs.second;
+    };
+
+    priority_queue<pair<CField, double>, vector<pair<CField, double>>, decltype(cmp)> pq(cmp);
+    CField field_end = m_map[start_end_points[3]][start_end_points[2]];
+
+    std::map<CField, CField> prev;
+    pq.emplace(m_map[start_end_points[1]][start_end_points[0]], distance(m_map[start_end_points[1]][start_end_points[0]], field_end));
+    m_map[start_end_points[1]][start_end_points[0]].m_opened = true;
+
+    while( !pq.empty()){
+        print_map(m_map, start_end_points);
+        CField field = pq.top().first;
+        cout << "Selected: " << pq.top().second << endl;
+        pq.pop();
+
+        if( field.m_x == start_end_points[2] && field.m_y == start_end_points[3]){
+            reconstruct_path(m_map, start_end_points, prev);
+            return;
+        }
+
+        for (size_t i = 0; i < 4; i++) {
+            switch (i) {
+                case 0: // UP
+                    if (field.m_y > 0) {
+                        auto &neighbor = m_map[field.m_y - 1][field.m_x];
+
+                        if (!neighbor.m_door && !neighbor.m_opened) {
+                            pq.emplace(neighbor, distance(neighbor, field_end));
+                            cout << "Adding: " << distance(neighbor, field_end) << endl;
+                            neighbor.m_opened = true;
+                            prev[neighbor] = field;
+                        }
+                    }
+                    break;
+
+                case 1: // DOWN
+                    if (field.m_y + 1 < m_map.size()) {
+                        auto &neighbor = m_map[field.m_y + 1][field.m_x];
+
+                        if (!neighbor.m_door && !neighbor.m_opened) {
+                            pq.emplace(neighbor, distance(neighbor, field_end));
+                            cout << "Adding: " << distance(neighbor, field_end) << endl;
+                            neighbor.m_opened = true;
+                            prev[neighbor] = field;
+                        }
+                    }
+                    break;
+
+                case 2: // RIGHT
+                    if (field.m_x + 1 < m_map[0].size()) {
+                        auto &neighbor = m_map[field.m_y][field.m_x + 1];
+
+                        if (!neighbor.m_door && !neighbor.m_opened) {
+                            pq.emplace(neighbor, distance(neighbor, field_end));
+                            cout << "Adding: " << distance(neighbor, field_end) << endl;
+                            neighbor.m_opened = true;
+                            prev[neighbor] = field;
+                        }
+                    }
+                    break;
+
+                case 3: // LEFT
+                    if (field.m_x > 0) {
+                        auto &neighbor = m_map[field.m_y][field.m_x - 1];
+
+                        if (!neighbor.m_door && !neighbor.m_opened) {
+                            pq.emplace(neighbor, distance(neighbor, field_end));
+                            cout << "Adding: " << distance(neighbor, field_end) << endl;
+                            neighbor.m_opened = true;
+                            prev[neighbor] = field;
+                        }
+                    }
+                    break;
+            }
+        }
+
+    }
 
 }
 
