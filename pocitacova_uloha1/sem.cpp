@@ -54,7 +54,7 @@ void read_file(vector<vector<CField>>& map, vector<size_t>& start_end_points){
     string name;
     cin >> name;
 
-    ifile.open( "dataset/36.txt", std::ios::in );
+    ifile.open( "dataset/26.txt", std::ios::in );
     while( !ifile || !ifile.is_open() ){
         std::cout << "Could not find the file " << std::endl;
         cin >> name;
@@ -105,15 +105,15 @@ void print_map(vector<vector<CField>>& map, vector<size_t>& start_end_points){
     for( size_t i = 0; i < map.size(); i++){
         for(size_t j = 0; j < map[i].size(); j++){
             if( j == start_end_points[0] && i == start_end_points[1]){
-                cout << 'S';
+                cout << "\033[91m" << "S" << "\033[m";
                 continue;
             }
             else if( j == start_end_points[2] && i == start_end_points[3]){
-                cout << 'E';
+                cout << "\033[91m" << "E" << "\033[m";
                 continue;
             }
             else if(map[i][j].m_final_path){
-                cout << 'o';
+                cout << "\033[93m" << "O" << "\033[m";
                 continue;
             }
             else if(map[i][j].m_opened){
@@ -131,9 +131,16 @@ void print_map(vector<vector<CField>>& map, vector<size_t>& start_end_points){
 
 void reconstruct_path(vector<vector<CField>>& m_map, vector<size_t>& start_end_points, std::map<CField, CField>& prev){
     cout << "Rekonstrukce:" << endl;
+
+    if(start_end_points[0] == start_end_points[2] && start_end_points[1] == start_end_points[3]){
+        cout << "Pocatecni pozice je stejna jako koncova" << endl;
+        return;
+    }
     auto &field = prev[m_map[start_end_points[3]][start_end_points[2]]];
 
     //cout << "Initial Field: " << field.m_x << ' ' << field.m_y << endl;
+
+    size_t count = 0;
 
     while (field.m_x != start_end_points[0] || field.m_y != start_end_points[1]) {
         //cout << "In Loop: " << field.m_x << ' ' << field.m_y << endl;
@@ -143,13 +150,17 @@ void reconstruct_path(vector<vector<CField>>& m_map, vector<size_t>& start_end_p
         }
 
         field = prev[field];
+        count++;
     }
 
     cout << "Vysledna trasa:" << endl << endl;
     print_map(m_map, start_end_points);
+    cout << "--------------------------------------------" << endl;
+    cout << "Delka trasy: " << count + 2 << endl;
 }
 
 void random_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
+    size_t count = 0;
     std::map<CField, CField> prev;
 
     vector<CField> vec;
@@ -162,11 +173,12 @@ void random_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
         print_map(m_map, start_end_points);
         size_t pos = rand() % vec.size();
         CField field = vec[pos];
-        cout << "Nova iterace, vybran prvek" << field.m_x << ' '<< field.m_y << endl;
+        //cout << "Nova iterace, vybran prvek" << field.m_x << ' '<< field.m_y << endl;
         vec.erase( vec.begin() + pos);
 
         if( field.m_x == start_end_points[2] && field.m_y == start_end_points[3]){
             reconstruct_path(m_map, start_end_points, prev);
+            cout << "Otevreno vrcholu: " << count + 1 << endl;
             return;
         }
 
@@ -180,6 +192,7 @@ void random_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
                             vec.emplace_back(neighbor);
                             neighbor.m_opened = true;
                             prev[neighbor] = field;
+                            count++;
                         }
                     }
                     break;
@@ -192,6 +205,7 @@ void random_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
                             vec.emplace_back(neighbor);
                             neighbor.m_opened = true;
                             prev[neighbor] = field;
+                            count++;
                         }
                     }
                     break;
@@ -204,6 +218,7 @@ void random_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
                             vec.emplace_back(neighbor);
                             neighbor.m_opened = true;
                             prev[neighbor] = field;
+                            count++;
                         }
                     }
                     break;
@@ -216,6 +231,7 @@ void random_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
                             vec.emplace_back(neighbor);
                             neighbor.m_opened = true;
                             prev[neighbor] = field;
+                            count++;
                         }
                     }
                     break;
@@ -227,6 +243,7 @@ void random_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
 }
 
 void bfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
+    size_t count = 0;
     std::map<CField, CField> prev;
 
     queue<CField> q;
@@ -240,6 +257,7 @@ void bfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
 
         if( field.m_x == start_end_points[2] && field.m_y == start_end_points[3]){
             reconstruct_path(m_map, start_end_points, prev);
+            cout << "Otevreno vrcholu: " << count + 1 << endl;
             return;
         }
 
@@ -253,6 +271,7 @@ void bfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
                             q.push(neighbor);
                             neighbor.m_opened = true;
                             prev[neighbor] = field;
+                            count++;
                         }
                     }
                     break;
@@ -265,6 +284,7 @@ void bfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
                             q.push(neighbor);
                             neighbor.m_opened = true;
                             prev[neighbor] = field;
+                            count++;
                         }
                     }
                     break;
@@ -277,6 +297,7 @@ void bfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
                             q.push(neighbor);
                             neighbor.m_opened = true;
                             prev[neighbor] = field;
+                            count++;
                         }
                     }
                     break;
@@ -289,6 +310,7 @@ void bfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
                             q.push(neighbor);
                             neighbor.m_opened = true;
                             prev[neighbor] = field;
+                            count++;
                         }
                     }
                     break;
@@ -299,10 +321,11 @@ void bfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
     cout << "Could not find a way to end, sorry" << endl;
 }
 
-int dfs_godeep(vector<vector<CField>> m_map, vector<size_t>& start_end_points, map<CField, CField> prev, size_t x, size_t y){
+int dfs_godeep(vector<vector<CField>>& m_map, vector<size_t>& start_end_points, map<CField, CField> prev, size_t x, size_t y, size_t& count){
 
     if( x == start_end_points[2] && y == start_end_points[3]){
         reconstruct_path(m_map, start_end_points, prev);
+        cout << "Otevreno vrcholu: " << count + 2 << endl;
         return 1;
     }
 
@@ -315,7 +338,7 @@ int dfs_godeep(vector<vector<CField>> m_map, vector<size_t>& start_end_points, m
                 if (y > 0) {
                     if (!m_map[y - 1][x].m_door && !m_map[y - 1][x].m_opened) {
                         prev[m_map[y - 1][x]] = m_map[y][x];
-                        if(dfs_godeep(m_map, start_end_points, prev, x, y - 1))
+                        if(dfs_godeep(m_map, start_end_points, prev, x, y - 1, ++count))
                             return 1;
                     }
                 }
@@ -325,7 +348,7 @@ int dfs_godeep(vector<vector<CField>> m_map, vector<size_t>& start_end_points, m
                 if (y + 1 < m_map.size()) {
                     if (!m_map[y + 1][x].m_door && !m_map[y + 1][x].m_opened) {
                         prev[m_map[y + 1][x]] = m_map[y][x];
-                        if(dfs_godeep(m_map, start_end_points, prev, x, y + 1))
+                        if(dfs_godeep(m_map, start_end_points, prev, x, y + 1, ++count))
                             return 1;
                     }
                 }
@@ -335,7 +358,7 @@ int dfs_godeep(vector<vector<CField>> m_map, vector<size_t>& start_end_points, m
                 if (x + 1 < m_map[0].size()) {
                     if (!m_map[y][x + 1].m_door && !m_map[y][x + 1].m_opened) {
                         prev[m_map[y][x + 1]] = m_map[y][x];
-                        if(dfs_godeep(m_map, start_end_points, prev, x + 1, y))
+                        if(dfs_godeep(m_map, start_end_points, prev, x + 1, y, ++count))
                             return 1;
                     }
                 }
@@ -345,7 +368,7 @@ int dfs_godeep(vector<vector<CField>> m_map, vector<size_t>& start_end_points, m
                 if (x > 0) {
                     if (!m_map[y][x - 1].m_door && !m_map[y][x - 1].m_opened) {
                         prev[m_map[y][x - 1]] = m_map[y][x];
-                        if(dfs_godeep(m_map, start_end_points, prev, x - 1, y))
+                        if(dfs_godeep(m_map, start_end_points, prev, x - 1, y, ++count))
                             return 1;
                     }
                 }
@@ -356,10 +379,16 @@ int dfs_godeep(vector<vector<CField>> m_map, vector<size_t>& start_end_points, m
 }
 
 void dfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
+    size_t count = 0;
     std::map<CField, CField> prev;
 
     CField field = m_map[start_end_points[1]][start_end_points[0]];
     m_map[start_end_points[1]][start_end_points[0]].m_opened = true;
+
+    if(start_end_points[0] == start_end_points[2] && start_end_points[1] == start_end_points[3]){
+        cout << "Pocatecni pozice je stejna jako koncova" << endl;
+        return;
+    }
 
     for (size_t i = 0; i < 4; i++) {
         switch (i) {
@@ -369,7 +398,7 @@ void dfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
 
                     if (!neighbor.m_door && !neighbor.m_opened) {
                         prev[neighbor] = field;
-                        if(dfs_godeep(m_map, start_end_points, prev, field.m_x, field.m_y - 1))
+                        if(dfs_godeep(m_map, start_end_points, prev, field.m_x, field.m_y - 1, ++count))
                             return;
                     }
                 }
@@ -381,7 +410,7 @@ void dfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
 
                     if (!neighbor.m_door && !neighbor.m_opened) {
                         prev[neighbor] = field;
-                        if(dfs_godeep(m_map, start_end_points, prev,field.m_x, field.m_y + 1))
+                        if(dfs_godeep(m_map, start_end_points, prev,field.m_x, field.m_y + 1, ++count))
                             return;
                     }
                 }
@@ -393,7 +422,7 @@ void dfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
 
                     if (!neighbor.m_door && !neighbor.m_opened) {
                         prev[neighbor] = field;
-                        if(dfs_godeep(m_map, start_end_points, prev,field.m_x + 1, field.m_y))
+                        if(dfs_godeep(m_map, start_end_points, prev,field.m_x + 1, field.m_y, ++count))
                             return;
                     }
                 }
@@ -405,14 +434,14 @@ void dfs(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
 
                     if (!neighbor.m_door && !neighbor.m_opened) {
                         prev[neighbor] = field;
-                        if(dfs_godeep(m_map, start_end_points, prev,field.m_x - 1, field.m_y))
+                        if(dfs_godeep(m_map, start_end_points, prev,field.m_x - 1, field.m_y, ++count))
                             return;
                     }
                 }
                 break;
         }
     }
-
+    cout << "Could not find a way to end, sorry" << endl;
 }
 
 double distance(const CField& start, const CField& end) {
@@ -428,6 +457,7 @@ void greedy_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
         return lhs.second + epsilon > rhs.second;
     };
 
+    size_t count = 0;
     priority_queue<pair<CField, double>, vector<pair<CField, double>>, decltype(cmp)> pq(cmp);
     CField field_end = m_map[start_end_points[3]][start_end_points[2]];
 
@@ -438,11 +468,12 @@ void greedy_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
     while( !pq.empty()){
         print_map(m_map, start_end_points);
         CField field = pq.top().first;
-        cout << "Selected: " << pq.top().second << endl;
+        //cout << "Selected: " << pq.top().second << endl;
         pq.pop();
 
         if( field.m_x == start_end_points[2] && field.m_y == start_end_points[3]){
             reconstruct_path(m_map, start_end_points, prev);
+            cout << "Otevreno vrcholu: " << count + 1 << endl;
             return;
         }
 
@@ -454,9 +485,10 @@ void greedy_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
 
                         if (!neighbor.m_door && !neighbor.m_opened) {
                             pq.emplace(neighbor, distance(neighbor, field_end));
-                            cout << "Adding: " << distance(neighbor, field_end) << endl;
+                            //cout << "Adding: " << distance(neighbor, field_end) << endl;
                             neighbor.m_opened = true;
                             prev[neighbor] = field;
+                            count++;
                         }
                     }
                     break;
@@ -467,9 +499,10 @@ void greedy_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
 
                         if (!neighbor.m_door && !neighbor.m_opened) {
                             pq.emplace(neighbor, distance(neighbor, field_end));
-                            cout << "Adding: " << distance(neighbor, field_end) << endl;
+                            //cout << "Adding: " << distance(neighbor, field_end) << endl;
                             neighbor.m_opened = true;
                             prev[neighbor] = field;
+                            count++;
                         }
                     }
                     break;
@@ -480,9 +513,10 @@ void greedy_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
 
                         if (!neighbor.m_door && !neighbor.m_opened) {
                             pq.emplace(neighbor, distance(neighbor, field_end));
-                            cout << "Adding: " << distance(neighbor, field_end) << endl;
+                            //cout << "Adding: " << distance(neighbor, field_end) << endl;
                             neighbor.m_opened = true;
                             prev[neighbor] = field;
+                            count++;
                         }
                     }
                     break;
@@ -493,9 +527,10 @@ void greedy_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
 
                         if (!neighbor.m_door && !neighbor.m_opened) {
                             pq.emplace(neighbor, distance(neighbor, field_end));
-                            cout << "Adding: " << distance(neighbor, field_end) << endl;
+                            //cout << "Adding: " << distance(neighbor, field_end) << endl;
                             neighbor.m_opened = true;
                             prev[neighbor] = field;
+                            count++;
                         }
                     }
                     break;
