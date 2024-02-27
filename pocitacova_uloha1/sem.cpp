@@ -54,7 +54,7 @@ void read_file(vector<vector<CField>>& map, vector<size_t>& start_end_points){
     string name;
     cin >> name;
 
-    ifile.open( "dataset/26.txt", std::ios::in );
+    ifile.open( "tests/3.txt", std::ios::in );
     while( !ifile || !ifile.is_open() ){
         std::cout << "Could not find the file " << std::endl;
         cin >> name;
@@ -541,8 +541,101 @@ void greedy_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_poin
 
 }
 
+double distance(const CField& start, const CField& end, size_t length) {
+    double x_diff = static_cast<double>(start.m_x) - static_cast<double>(end.m_x);
+    double y_diff = static_cast<double>(start.m_y) - static_cast<double>(end.m_y);
+    return length + sqrt(pow(x_diff, 2) + pow(y_diff, 2));
+}
+
 void astar_search(vector<vector<CField>>& m_map, vector<size_t>& start_end_points){
 
+    auto cmp = [](const pair<pair<CField,size_t>, double>& lhs, const pair<pair<CField,size_t>, double>& rhs) {
+        const double epsilon = 1e-12;
+        return lhs.second + epsilon > rhs.second;
+    };
+
+    size_t count = 0;
+    priority_queue<pair<pair<CField,size_t>, double>, vector<pair<pair<CField,size_t>, double>>, decltype(cmp)> pq(cmp);
+    CField field_end = m_map[start_end_points[3]][start_end_points[2]];
+
+    std::map<CField, CField> prev;
+    pq.emplace(make_pair(make_pair(m_map[start_end_points[1]][start_end_points[0]], 0), distance(m_map[start_end_points[1]][start_end_points[0]], field_end)));
+    m_map[start_end_points[1]][start_end_points[0]].m_opened = true;
+
+    while( !pq.empty()){
+        print_map(m_map, start_end_points);
+        CField field = pq.top().first.first;
+        size_t length = pq.top().first.second;
+        //cout << "Selected: " << pq.top().second << endl;
+        pq.pop();
+
+        if( field.m_x == start_end_points[2] && field.m_y == start_end_points[3]){
+            reconstruct_path(m_map, start_end_points, prev);
+            cout << "Otevreno vrcholu: " << count + 1 << endl;
+            return;
+        }
+
+        for (size_t i = 0; i < 4; i++) {
+            switch (i) {
+                case 0: // UP
+                    if (field.m_y > 0) {
+                        auto &neighbor = m_map[field.m_y - 1][field.m_x];
+
+                        if (!neighbor.m_door && !neighbor.m_opened) {
+                            pq.emplace(make_pair(neighbor, length+1), distance(neighbor, field_end, length+1));
+                            //cout << "Adding: " << distance(neighbor, field_end) << endl;
+                            neighbor.m_opened = true;
+                            prev[neighbor] = field;
+                            count++;
+                        }
+                    }
+                    break;
+
+                case 1: // DOWN
+                    if (field.m_y + 1 < m_map.size()) {
+                        auto &neighbor = m_map[field.m_y + 1][field.m_x];
+
+                        if (!neighbor.m_door && !neighbor.m_opened) {
+                            pq.emplace(make_pair(neighbor, length+1), distance(neighbor, field_end, length+1));
+                            //cout << "Adding: " << distance(neighbor, field_end) << endl;
+                            neighbor.m_opened = true;
+                            prev[neighbor] = field;
+                            count++;
+                        }
+                    }
+                    break;
+
+                case 2: // RIGHT
+                    if (field.m_x + 1 < m_map[0].size()) {
+                        auto &neighbor = m_map[field.m_y][field.m_x + 1];
+
+                        if (!neighbor.m_door && !neighbor.m_opened) {
+                            pq.emplace(make_pair(neighbor, length+1), distance(neighbor, field_end, length+1));
+                            //cout << "Adding: " << distance(neighbor, field_end) << endl;
+                            neighbor.m_opened = true;
+                            prev[neighbor] = field;
+                            count++;
+                        }
+                    }
+                    break;
+
+                case 3: // LEFT
+                    if (field.m_x > 0) {
+                        auto &neighbor = m_map[field.m_y][field.m_x - 1];
+
+                        if (!neighbor.m_door && !neighbor.m_opened) {
+                            pq.emplace(make_pair(neighbor, length+1), distance(neighbor, field_end, length+1));
+                            //cout << "Adding: " << distance(neighbor, field_end) << endl;
+                            neighbor.m_opened = true;
+                            prev[neighbor] = field;
+                            count++;
+                        }
+                    }
+                    break;
+            }
+        }
+
+    }
 }
 
 void choose_algo(vector<vector<CField>>& map, vector<size_t>& start_end_points){
@@ -552,7 +645,7 @@ void choose_algo(vector<vector<CField>>& map, vector<size_t>& start_end_points){
     cin >> num_algo;
     while( num_algo != 1 && num_algo != 2 && num_algo != 3 && num_algo != 4 && num_algo != 5){
         cout << "Not valid number, type again:" << endl;
-        cin >> num_algo;
+        return;
     }
     switch(num_algo){
         case 1:
