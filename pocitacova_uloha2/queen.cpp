@@ -21,7 +21,7 @@
 #include <memory>
 using namespace std;
 
-void printMap(vector<vector<int>>& map){
+void printMap(vector<vector<int>>& map, size_t score){
     cout << endl;
     size_t count = 0;
     cout << "x ";
@@ -47,7 +47,7 @@ void printMap(vector<vector<int>>& map){
         cout << endl;
         count++;
     }
-
+    cout << "Score: " << score << endl;
 }
 
 vector<vector<int>>  getMap(size_t size){
@@ -76,7 +76,7 @@ size_t getSize(){
 
 size_t getMove(){
     size_t tmp;
-    cout << "V jakem rozpeti poli do vsech stran budu hledat souseda?" << endl;
+    cout << "V jakem rozpeti poli do vsech stran budu hledat souseda? ( 2 - N-1)" << endl;
     cin >> tmp;
     if( tmp == 0) {
         cout << "NaN" << endl;
@@ -99,42 +99,22 @@ void fillZeros( vector<vector<int>>& map, int x, int y){
     for (int i = 1; y + i < (int)map.size() && x + i < (int)map[0].size(); i++) {
         if (map[y + i][x + i] == 0)
             map[y + i][x + i] = 1;
-        else
-            break;
     }
 
     for (int i = 1; y + i < (int)map.size() && x - i >= 0; i++) {
         if (map[y + i][x - i] == 0)
             map[y + i][x - i] = 1;
-        else
-            break;
     }
 
     for (int i = 1; y - i >= 0 && x + i < (int)map[0].size(); i++) {
         if (map[y - i][x + i] == 0)
             map[y - i][x + i] = 1;
-        else
-            break;
     }
 
     for (int i = 1; y - i >= 0 && x - i >= 0; i++) {
         if (map[y - i][x - i] == 0)
             map[y - i][x - i] = 1;
-        else
-            break;
     }
-}
-
-pair<int,int> setFirst( vector<vector<int>>& map ){
-    srand(time(0));
-
-    size_t x = rand() % map[0].size();
-    size_t y = rand() % map[0].size();
-
-    map[y][x] = 2;
-    printMap(map);
-    fillZeros(map, x, y);
-    return make_pair(x,y);
 }
 
 size_t getScore( vector<vector<int>>& map ){
@@ -148,38 +128,71 @@ size_t getScore( vector<vector<int>>& map ){
     return score;
 }
 
+pair<int,int> setFirst( vector<vector<int>>& map ){
+    srand(time(0));
+
+    size_t x = rand() % map[0].size();
+    size_t y = rand() % map[0].size();
+
+    map[y][x] = 2;
+    printMap(map, getScore(map));
+    fillZeros(map, x, y);
+    return make_pair(x,y);
+}
+
 pair<int,int> selectNeighbour(vector<vector<int>>& map, size_t move, pair<int,int> addedLast ){
-    vector<pair<int,int>> vec;
+    vector<pair<int,int>> neighboursVec;
     for (int i = addedLast.first - (int)move; i <= addedLast.first + (int)move; ++i) {
         for (int j = addedLast.second - (int)move; j <= addedLast.second + (int)move; ++j) {
             if (i >= 0 && i < (int)map.size() && j >= 0 && j < (int)map[0].size() && map[j][i] == 0) {
-                vec.push_back({i, j});
+                neighboursVec.push_back({i, j});
 
             }
         }
     }
 
-    for( size_t i = 0; i < vec.size(); i++){
-        cout << "<" << vec[i].first << ", " << vec[i].second << "> ";
+    /*for( size_t i = 0; i < neighboursVec.size(); i++){
+        cout << "<" << neighboursVec[i].first << ", " << neighboursVec[i].second << "> ";
     }
-    cout << endl;
+    cout << endl;*/
 
-    srand(time(0));
-    pair<int,int> selectedPair = vec[rand() % vec.size()];
-    cout << "Selected: " << selectedPair.first << ", " << selectedPair.second << endl;
-    return selectedPair;
+    if( neighboursVec.empty()){
+        cout << "Nelze vybrat zadne dalsi pole" << endl;
+        return make_pair(-1,-1);
+    }
+
+    int best = -1;
+    pair<int,int> bestNeigbour;
+    for( size_t i = 0; i < neighboursVec.size(); i++){
+        vector<vector<int>> tmpMap = map;
+        tmpMap[neighboursVec[i].second][neighboursVec[i].first] = 2;
+        fillZeros(tmpMap, neighboursVec[i].first, neighboursVec[i].second);
+        cout << "Pro: " << neighboursVec[i].first << " " << neighboursVec[i].second << " skore: " << getScore(tmpMap) << endl;
+        if( best < (int)getScore(tmpMap)){
+            cout << "Best" << endl;
+            best = getScore(tmpMap);
+            bestNeigbour = neighboursVec[i];
+        }
+    }
+
+    cout << "Vybran prvek: " << bestNeigbour.first << " " << bestNeigbour.second << endl;
+    map[bestNeigbour.second][bestNeigbour.first] = 2;
+    fillZeros(map, bestNeigbour.first, bestNeigbour.second);
+    return bestNeigbour;
 }
 
 void hillClimb( size_t size, size_t move, vector<vector<int>>& map){
     pair<int,int> addedLast;
     addedLast = setFirst(map);
     size_t score = getScore(map);
-    printMap(map);
-    size_t iter = 0;
+    printMap(map, score);
 
-    while(true){
+    for(size_t i = 0; i < size; i++){
         pair<int,int> neighbour = selectNeighbour(map, move, addedLast);
-        break;
+        if( neighbour.first == -1 && neighbour.second == -1)
+            break;
+        printMap(map, getScore(map));
+        addedLast = neighbour;
     }
 }
 
@@ -195,7 +208,7 @@ int main(){
     cout << move << endl;
 
     vector<vector<int>> map = getMap( size );
-    printMap(map);
+    printMap(map, getScore(map));
 
     hillClimb(size, move, map);
 
