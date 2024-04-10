@@ -17,6 +17,7 @@
         (and
             (has-color ball c1 top)
             (has-color ball c2 bottom)
+            (not(hat ball))
         )
     )
 )
