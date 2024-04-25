@@ -69,6 +69,7 @@ public:
     bool m_snake = false;
     bool m_coin = false;
     bool m_opened = false;
+    bool m_longestUsed = false;
 
     CField()= default;
     CField( size_t x, size_t y, bool wall) :  m_pos(x,y), m_wall(wall) {}
@@ -249,6 +250,12 @@ void closeFields(CMap& map){
             map.m_map[i][j].m_opened = false;
 }
 
+void closeUsed(CMap& map){
+    for(size_t i = 0; i < map.m_height; i++)
+        for(size_t j = 0; j < map.m_width; j++)
+            map.m_map[i][j].m_longestUsed = false;
+}
+
 enumMove getDir(CPos start, CPos stop){
     if( start.m_y == stop.m_y + 1)
         return UP;
@@ -340,105 +347,6 @@ enumMove  survive(CMap& map, CSnake& snake){
     return res.front();
 }
 
-enumMove  longest(CMap& map, CSnake& snake){
-    CPos furthest;
-    double dist;
-    enumMove resMove = NOWHERE;
-
-    for (size_t i = 0; i < 4; i++) {
-        switch (i) {
-            case 0: // UP
-                if (snake.m_headPos.m_y > 0) {
-                    auto &neighbor = map.m_map[snake.m_headPos.m_y - 1][snake.m_headPos.m_x];
-                    if( neighbor.m_pos == map.m_coinPos && snake.m_behave ){
-                        map.m_map[snake.m_headPos.m_y - 1][snake.m_headPos.m_x].m_opened = true;
-                        return UP;
-                    }
-                    if (!neighbor.m_wall && !neighbor.m_snake && !neighbor.m_opened) {
-                        if (resMove == NOWHERE || distance(neighbor.m_pos, map.m_coinPos) > dist) {
-                            furthest = neighbor.m_pos;
-                            dist = distance(neighbor.m_pos, map.m_coinPos);
-                            resMove = UP;
-                        }
-                    }
-                }
-                break;
-
-            case 1: // DOWN
-                if (snake.m_headPos.m_y + 1 < map.m_map.size()) {
-                    auto &neighbor = map.m_map[snake.m_headPos.m_y + 1][snake.m_headPos.m_x];
-                    if( neighbor.m_pos == map.m_coinPos && snake.m_behave ){
-                        map.m_map[snake.m_headPos.m_y + 1][snake.m_headPos.m_x].m_opened = true;
-                        return DOWN;
-                    }
-                    if (!neighbor.m_wall && !neighbor.m_snake && !neighbor.m_opened) {
-                        if (resMove == NOWHERE || distance(neighbor.m_pos, map.m_coinPos) > dist) {
-                            furthest = neighbor.m_pos;
-                            dist = distance(neighbor.m_pos, map.m_coinPos);
-                            resMove = DOWN;
-                        }
-                    }
-                }
-                break;
-
-            case 2: // RIGHT
-                if (snake.m_headPos.m_x + 1 < map.m_map[0].size()) {
-                    auto &neighbor = map.m_map[snake.m_headPos.m_y][snake.m_headPos.m_x + 1];
-                    if( neighbor.m_pos == map.m_coinPos && snake.m_behave ){
-                        map.m_map[snake.m_headPos.m_y][snake.m_headPos.m_x + 1].m_opened = true;
-                        return RIGHT;
-                    }
-                    if (!neighbor.m_wall && !neighbor.m_snake && !neighbor.m_opened) {
-                        if (resMove == NOWHERE || distance(neighbor.m_pos, map.m_coinPos) > dist) {
-                            furthest = neighbor.m_pos;
-                            dist = distance(neighbor.m_pos, map.m_coinPos);
-                            resMove = RIGHT;
-                        }
-                    }
-                }
-                break;
-
-            case 3: // LEFT
-                if (snake.m_headPos.m_x > 0) {
-                    auto &neighbor = map.m_map[snake.m_headPos.m_y][snake.m_headPos.m_x - 1];
-                    if( neighbor.m_pos == map.m_coinPos && snake.m_behave ){
-                        map.m_map[snake.m_headPos.m_y][snake.m_headPos.m_x - 1].m_opened = true;
-                        return LEFT;
-                    }
-                    if (!neighbor.m_wall && !neighbor.m_snake && !neighbor.m_opened) {
-                        if (resMove == NOWHERE || distance(neighbor.m_pos, map.m_coinPos) > dist) {
-                            furthest = neighbor.m_pos;
-                            dist = distance(neighbor.m_pos, map.m_coinPos);
-                            resMove = LEFT;
-                        }
-                    }
-                }
-                break;
-        }
-    }
-    if (resMove == NOWHERE)
-        throw logic_error("Cannot get to Coin");
-
-    switch (resMove) {
-        case UP: // UP
-            map.m_map[snake.m_headPos.m_y - 1][snake.m_headPos.m_x].m_opened = true;
-            break;
-
-        case DOWN: // DOWN
-            map.m_map[snake.m_headPos.m_y + 1][snake.m_headPos.m_x].m_opened = true;
-            break;
-
-        case RIGHT: // RIGHT
-            map.m_map[snake.m_headPos.m_y][snake.m_headPos.m_x + 1].m_opened = true;
-            break;
-
-        case LEFT: // LEFT
-            map.m_map[snake.m_headPos.m_y][snake.m_headPos.m_x - 1].m_opened = true;
-            break;
-    }
-    return resMove;
-}
-
 enumMove  reconstruct_path(CMap& map, CSnake& snake, std::map<CPos, CPos>& prev){
     vector<CPos> path;
     queue<enumMove> pathRes;
@@ -458,6 +366,16 @@ enumMove  reconstruct_path(CMap& map, CSnake& snake, std::map<CPos, CPos>& prev)
     for( size_t i = 0; i < path.size() - 1; i++)
         pathRes.push(getDir(path[i], path[i+1]));
 
+    if( pathRes.front() == UP)
+        map.m_map[snake.m_headPos.m_y - 1][snake.m_headPos.m_x].m_longestUsed = true;
+    else if( pathRes.front() == DOWN)
+        map.m_map[snake.m_headPos.m_y + 1][snake.m_headPos.m_x].m_longestUsed = true;
+    else if( pathRes.front() == RIGHT )
+        map.m_map[snake.m_headPos.m_y][snake.m_headPos.m_x+1].m_longestUsed = true;
+    else if( pathRes.front() == LEFT)
+        map.m_map[snake.m_headPos.m_y - 1][snake.m_headPos.m_x-1].m_longestUsed = true;
+    else throw logic_error("Bad direction");
+
     return pathRes.front();
 }
 
@@ -470,9 +388,7 @@ enumMove  astar_search(CMap& map, CSnake& snake){
         return lhs.second + epsilon > rhs.second;
     };
 
-    if( snake.m_behave ){
-        return longest(map, snake);
-    }
+
 
     priority_queue<pair<pair<CPos,size_t>, double>, vector<pair<pair<CPos,size_t>, double>>, decltype(cmp)> pq(cmp);
     CPos field_end = map.m_coinPos;
@@ -482,6 +398,7 @@ enumMove  astar_search(CMap& map, CSnake& snake){
     map.m_map[snake.m_headPos.m_y][snake.m_headPos.m_x].m_opened = true;
 
     while( !pq.empty()){
+
         CPos field = pq.top().first.first;
         size_t length = pq.top().first.second;
         pq.pop();
@@ -503,9 +420,9 @@ enumMove  astar_search(CMap& map, CSnake& snake){
                         if( neighbor.m_pos == field_end && snake.m_behave )
                             pq.emplace(make_pair(make_pair(neighbor.m_pos, length+1), 100000));
 
-                        if (!neighbor.m_wall && !neighbor.m_opened && !neighbor.m_snake) {
+                        if (!neighbor.m_wall && !neighbor.m_opened && !neighbor.m_snake && !neighbor.m_longestUsed) {
                             pq.emplace(make_pair(make_pair(neighbor.m_pos, length+1), distance(neighbor.m_pos, field_end, length+1)));
-                            if( !snake.m_behave )
+                            //if( !snake.m_behave )
                                 neighbor.m_opened = true;
                             prev[neighbor.m_pos] = field;
                         }
@@ -519,9 +436,9 @@ enumMove  astar_search(CMap& map, CSnake& snake){
                         if( neighbor.m_pos == field_end && snake.m_behave )
                             pq.emplace(make_pair(make_pair(neighbor.m_pos, length+1), 100000));
 
-                        if (!neighbor.m_wall && !neighbor.m_opened && !neighbor.m_snake) {
+                        if (!neighbor.m_wall && !neighbor.m_opened && !neighbor.m_snake && !neighbor.m_longestUsed) {
                             pq.emplace(make_pair(make_pair(neighbor.m_pos, length+1), distance(neighbor.m_pos, field_end, length+1)));
-                            if( !snake.m_behave )
+                            //if( !snake.m_behave )
                                 neighbor.m_opened = true;
                             prev[neighbor.m_pos] = field;
                         }
@@ -535,9 +452,9 @@ enumMove  astar_search(CMap& map, CSnake& snake){
                         if( neighbor.m_pos == field_end && snake.m_behave )
                             pq.emplace(make_pair(make_pair(neighbor.m_pos, length+1), 100000));
 
-                        if (!neighbor.m_wall && !neighbor.m_opened && !neighbor.m_snake) {
+                        if (!neighbor.m_wall && !neighbor.m_opened && !neighbor.m_snake && !neighbor.m_longestUsed) {
                             pq.emplace(make_pair(make_pair(neighbor.m_pos, length+1), distance(neighbor.m_pos, field_end, length+1)));
-                            if( !snake.m_behave )
+                            //if( !snake.m_behave )
                                 neighbor.m_opened = true;
                             prev[neighbor.m_pos] = field;
                         }
@@ -551,9 +468,9 @@ enumMove  astar_search(CMap& map, CSnake& snake){
                         if( neighbor.m_pos == field_end && snake.m_behave )
                             pq.emplace(make_pair(make_pair(neighbor.m_pos, length+1), 100000));
 
-                        if (!neighbor.m_wall && !neighbor.m_opened && !neighbor.m_snake) {
+                        if (!neighbor.m_wall && !neighbor.m_opened && !neighbor.m_snake && !neighbor.m_longestUsed) {
                             pq.emplace(make_pair(make_pair(neighbor.m_pos, length+1), distance(neighbor.m_pos, field_end, length+1)));
-                            if( !snake.m_behave )
+                            //if( !snake.m_behave )
                                 neighbor.m_opened = true;
                             prev[neighbor.m_pos] = field;
                         }
@@ -566,17 +483,14 @@ enumMove  astar_search(CMap& map, CSnake& snake){
     return survive(map, snake);
 }
 
-enumMove nextStep(CMap& map, CSnake& snake, queue<enumMove>& path){
-    if( snake.m_behave )
-        if( snake.m_headPos == map.m_coinPos )
-            closeFields(map);
+enumMove nextStep(CMap& map, CSnake& snake){
     if( !snake.m_behave )
-        closeFields(map);
+        closeUsed(map);
+    closeFields(map);
     return astar_search(map, snake);
 }
 
 void play( CMap& map, CSnake& snake){
-    queue<enumMove> path;
     size_t score = 0;
     size_t round = 0;
     bool expand = false;
@@ -584,7 +498,7 @@ void play( CMap& map, CSnake& snake){
 
     while(true){
         std::this_thread::sleep_for(std::chrono::milliseconds(250));
-        enumMove step = nextStep(map, snake, path);
+        enumMove step = nextStep(map, snake);
         snake.move(step, map, expand);
         expand = false;
 
@@ -592,6 +506,7 @@ void play( CMap& map, CSnake& snake){
             map.m_map[map.m_coinPos.m_y][map.m_coinPos.m_x].m_coin = false;
             score++;
             closeFields(map);
+            closeUsed(map);
             if( !snake.m_behave ) snake.checkBehav(map);
             genCoin(map);
             expand = true;
